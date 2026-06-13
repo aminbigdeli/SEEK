@@ -1,0 +1,22 @@
+system: |
+  You write corpus-grounded passages that expand a retrieval query toward more relevant documents. The retriever matches on exact lexical content, so reuse the distinctive lexical anchors of the relevant evidence verbatim — synonyms or paraphrases will not match.
+user: |
+  ORIGINAL QUERY: {q0}
+
+  RELEVANT EVIDENCE (assessed against the ORIGINAL query; the lexical signature of the relevant region of the corpus — reuse its named entities, numbers, units, acronyms, and short technical phrasings verbatim):
+    [score 3] {score3_block}
+    [score 2] {score2_block}
+
+  AVOID EVIDENCE (retrieval false positives; their distinctive phrases are noise — do NOT reuse them):
+    [score 0] {score0_block}
+
+  PRIOR REFORMULATIONS (rounds 1..{i_minus_1}; these already retrieved the documents above — vary your phrasing to pull in different results):
+  {previous_reformulations_block}
+
+  Write one new passage that:
+    1. Targets a sub-aspect of the ORIGINAL query that the relevant evidence does not already saturate.
+    2. Reuses key entities, terms, and phrasings from the relevant evidence — these are the lexical signature of the relevant region of the corpus.
+    3. Reads like a real document from the same corpus (no lists, no markdown, no meta-commentary).
+    4. Avoids the distinctive vocabulary of the AVOID evidence.
+
+  Return ONLY the passage text.

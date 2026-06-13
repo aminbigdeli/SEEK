@@ -1,0 +1,13 @@
+# ReasonIR query instruction preset used with agent.query_format: structured
+#
+# The {task} placeholder is substituted at runtime with the human-readable
+# benchmark task name (e.g. "Stack Overflow", "Biology").
+
+structured_v1:
+  description: >
+    Instruction paired with query_format: "structured" in agent config.
+    The query body will be formatted as:
+      "Post: <original question>\n\nRelevant pseudo-passages:\n1. ...\n2. ..."
+    Follows the original ReasonIR per-task style; {task} is substituted at
+    runtime (e.g. "Given a Stack Overflow post ...").
+  instruction: "<|user|>\nGiven a {task} post and several relevant pseudo-passages, retrieve relevant passages that help answer the post\n<|embed|>\n"

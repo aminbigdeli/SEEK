@@ -1,0 +1,97 @@
+llm:
+  provider: openai
+  base_url: https://openrouter.ai/api/v1
+  # base_url: null                        # null => OpenAI default
+  api_key_env: OPENAI_API_KEY
+  generator_model: qwen/qwen-2.5-7b-instruct
+  judge_model: qwen/qwen-2.5-7b-instruct
+  fallback_model: null
+  generator_temperature: 0.8
+  judge_temperature: 0.0
+  generator_max_tokens: 128
+  judge_max_tokens: 256
+  max_retries: 3
+  cache_dir: .cache/llm
+  num_threads: 5
+  extra_body: null
+    # reasoning:
+    #   enabled: true
+    #   exclude: true
+
+searcher:
+  # Retriever backend: "bm25" (default) or "reasonir"
+  backend: bm25
+
+  # Index, topics, qrels, and BM25 weights are resolved from dataset_registry.yaml.
+  # The values below are agent-side knobs that do not change per benchmark.
+  retrieval_depth: 1000                   # hits per round (full pool for RRF)
+  judge_depth: 10                         # how many NEW docs to assess per round
+  snippet_max_tokens: 500
+  cache_dir: .cache/bm25                  # BM25 query cache; set null to disable
+  # Optional overrides; leave null to honour the registry.
+  index_path_override: null
+  bm25_k1_override: null
+  bm25_b_override: null
+
+# ── ReasonIR dense retriever (optional) ─────────────────────────────────────
+# To switch from BM25 to ReasonIR:
+#   1. Set  searcher.backend: reasonir
+#   2. Uncomment the retriever block below
+#   3. Pre-compute embeddings: python scripts/embed_corpus.py \
+#        --benchmark <registry-key> --output_dir .cache/seek_embeddings/<registry-key>
+#   4. Set agent.query_format: structured  (pairs with retriever.instruction_preset)
+#
+# retriever:
+#   model_path: reasonir/ReasonIR-8B
+#   embeddings_dir: .cache/seek_embeddings  # {embeddings_dir}/{benchmark}/
+#   instruction_preset: structured_v1       # see prompts/retriever_instructions.yaml
+#   encode_batch_size: 8
+#   max_query_length: 32768
+#   max_doc_length: 32768
+#   long_context: false
+
+registry:
+  dataset_registry_path: dataset_registry.yaml
+
+generator:
+  k_pseudo_refs: 5
+  alpha_repeat: 5
+  round1_temperature: 0.8
+  round1_max_tokens: 128
+  skip_round1_generation: false
+  accumulate_pseudo_refs_from_r2: false
+  iter_prompt_yaml: prompts/pseudo_passage_generator.yaml
+  max_chars: 320
+  log_prompts: false
+
+agent:
+  max_rounds: 5
+  evidence_scope: all
+  termination_all_score_3: true
+  quality_saturation_min_score: 3
+  termination_coverage_saturation: true
+  saturation_min_new_docs: 1
+  saturation_consecutive_rounds: 2
+  # Query format sent to the retriever each round.
+  # "expanded"   – alpha-repetition concatenation (default for BM25)
+  # "structured" – labeled sections for ReasonIR: "Post: ...\n\nRelevant pseudo-passages:\n1. ..."
+  query_format: expanded
+
+fusion:
+  modes_to_run:
+    - judge_only_top_10
+  primary_mode: judge_only_top_10
+  rrf_k: 60
+  score_0_handling: demote                # demote | drop
+  top_k_output: 1000
+  head_cap: 10
+
+eval:
+  benchmark: bright-biology
+  run_output: outputs/runs/{model_tag}/{benchmark}.run
+  trace_output_dir: outputs/traces/{model_tag}/{benchmark}
+  qrels_cache_dir: .cache/qrels
+  parallelism: 4
+  output_top_k: 1000
+  run_tag: seek
+  metrics: null
